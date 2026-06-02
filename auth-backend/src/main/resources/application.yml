@@ -1,0 +1,29 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: risk-auth-backend
+
+  # Konfiguracija za PostgreSQL
+  datasource:
+    url: jdbc:postgresql://localhost:5433/risk_auth_db
+    username: admin
+    password: admin_password
+    driver-class-name: org.postgresql.Driver
+
+  # Konfiguracija za JPA / Hibernate
+  jpa:
+    hibernate:
+      ddl-auto: update # Automatski kreira/azurira tabele na osnovu Java entiteta
+    show-sql: true     # Prikazuje SQL upite u konzoli (korisno za debagovanje)
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  # Konfiguracija za Redis
+  data:
+    redis:
+      host: localhost
+      port: 6379
