@@ -25,7 +25,7 @@ public class MfaService {
         String otpauthUri = String.format("otpauth://totp/%s:%s?secret=%s&issuer=%s",
                 issuer, username, secret, issuer);
 
-        // Koristimo qrserver API 
+        // Koristimo qrserver API
         return "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data="
                 + URLEncoder.encode(otpauthUri, StandardCharsets.UTF_8);
     }

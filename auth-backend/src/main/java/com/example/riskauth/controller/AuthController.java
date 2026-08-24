@@ -24,6 +24,7 @@ import java.time.format.DateTimeFormatter;
 
 @RestController
 @RequestMapping("/api/auth")
+@CrossOrigin(origins = "http://localhost:4200")
 public class AuthController {
 
     @Autowired private AuthenticationManager authenticationManager;
