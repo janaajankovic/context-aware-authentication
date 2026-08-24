@@ -1,52 +1,49 @@
-/* Blaga siva pozadina za ceo sistem umesto drečavo bele */
+/* Pozadina aplikacije - svetla i moderna */
 body {
-  background-color: #f4f6f9;
+  background-color: #eef2f6;
   font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Centralno pozicioniranje formi */
-.container.mt-5 {
-  margin-top: 12vh !important;
+/* Stil za glavnu karticu */
+.auth-card {
+  border-radius: 16px !important;
 }
 
-/* Stilizacija kartica da izgledaju modernije */
-.card {
-  border: none;
+/* Moćan tamno-plavi/sivi gradijent za levu stranu */
+.bg-dark-gradient {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+}
+
+.text-muted-light {
+  color: #94a3b8;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+/* Mekša i modernija polja za unos */
+.form-control.bg-light {
+  background-color: #f8fafc !important;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
-}
-
-.card-header {
-  border-top-left-radius: 8px !important;
-  border-top-right-radius: 8px !important;
-  padding: 1.2rem;
-  border-bottom: none;
-}
-
-/* Tamna formalna boja za standardni login */
-.bg-dark {
-  background-color: #2b3541 !important; 
-}
-
-/* Standardna crvena za bezbednosne alarme (MFA) */
-.bg-danger {
-  background-color: #d32f2f !important;
-}
-
-/* Elegantniji fokus na poljima za unos */
-.form-control {
-  border-radius: 6px;
-  padding: 0.6rem 1rem;
+  padding: 0.8rem 1.2rem;
 }
 
 .form-control:focus {
-  border-color: #2b3541;
-  box-shadow: 0 0 0 0.2rem rgba(43, 53, 65, 0.2);
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 0 0 4px rgba(226, 232, 240, 0.5) !important;
 }
 
-.btn {
-  padding: 0.6rem;
-  font-weight: 500;
-  letter-spacing: 0.5px;
+/* Animacija i stilizacija glavnog dugmeta */
+.btn-dark.login-btn {
+  background-color: #0f172a;
+  border-radius: 8px;
+  padding: 0.8rem;
+  transition: all 0.3s ease;
+}
+
+.btn-dark.login-btn:hover {
+  background-color: #1e293b;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(15, 23, 42, 0.2) !important;
 }

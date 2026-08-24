@@ -1,25 +1,40 @@
-<div class="container mt-5">
-  <div class="row justify-content-center">
-    <div class="col-md-5">
-      <div class="card shadow">
-        <div class="card-header bg-dark text-white text-center">
-          <h4>Prijava u sistem</h4>
+<div class="d-flex align-items-center justify-content-center vh-100">
+  <div class="card auth-card shadow-lg border-0 overflow-hidden" style="max-width: 900px; width: 100%;">
+    <div class="row g-0">
+      
+      <!-- Leva Strana (Brending i Informacije) -->
+      <div class="col-md-5 bg-dark-gradient text-white p-5 d-flex flex-column justify-content-center align-items-center text-center">
+        <div class="mb-4">
+          <!-- Ikona sigurnosnog štita (SVG) -->
+          <svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" fill="currentColor" class="bi bi-shield-lock" viewBox="0 0 16 16">
+            <path d="M5.338 1.59a61 61 0 0 0-2.837.856.48.48 0 0 0-.328.39c-.554 4.157.726 7.19 2.253 9.188a10.7 10.7 0 0 0 2.287 2.233c.346.244.652.42.893.533q.18.085.293.118a1 1 0 0 0 .103.028 2 2 0 0 0 .103-.028q.113-.033.293-.118c.24-.113.547-.29.893-.533a10.7 10.7 0 0 0 2.287-2.233c1.527-1.997 2.807-5.031 2.253-9.188a.48.48 0 0 0-.328-.39c-.651-.213-1.75-.56-2.837-.855C9.552 1.29 8.531 1.067 8 1.067c-.53 0-1.552.223-2.662.524zM5.072.56C6.157.265 7.31 0 8 0s1.843.265 2.928.56c1.11.3 2.229.655 2.887.87a1.54 1.54 0 0 1 1.044 1.262c.596 4.477-.787 7.795-2.465 9.99a11.8 11.8 0 0 1-2.517 2.453 7 7 0 0 1-1.048.625c-.28.132-.581.24-.829.24s-.548-.108-.829-.24a7 7 0 0 1-1.048-.625 11.8 11.8 0 0 1-2.517-2.453C1.928 10.487.545 7.169 1.141 2.692A1.54 1.54 0 0 1 2.185 1.43 63 63 0 0 1 5.072.56"/>
+            <path d="M9.5 6.5a1.5 1.5 0 0 1-1 1.415l.385 1.99a.5.5 0 0 1-.491.595h-.788a.5.5 0 0 1-.49-.595l.384-1.99a1.5 1.5 0 1 1 2-1.415"/>
+          </svg>
         </div>
-        <div class="card-body">
-          <form (ngSubmit)="onLogin()">
-            <div class="mb-3">
-              <label class="form-label">Korisničko ime</label>
-              <input type="text" class="form-control" name="username" [(ngModel)]="username" required>
-            </div>
-            <div class="mb-3">
-              <label class="form-label">Lozinka</label>
-              <input type="password" class="form-control" name="password" [(ngModel)]="password" required>
-            </div>
-            <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
-            <button type="submit" class="btn btn-dark w-100">Prijavi se</button>
-          </form>
-        </div>
+        <h3 class="fw-bold mb-3">RiskAuth Engine</h3>
+        <p class="text-muted-light">Context-Aware platforma za dinamičku procenu rizika i adaptivnu autentifikaciju.</p>
       </div>
+      
+      <!-- Desna Strana (Forma) -->
+      <div class="col-md-7 p-5 bg-white">
+        <div class="text-center mb-5">
+          <h4 class="fw-bold text-dark">Prijava u sistem</h4>
+          <p class="text-muted">Unesite vaše kredencijale za pristup</p>
+        </div>
+        <form (ngSubmit)="onLogin()">
+          <div class="mb-4 text-start">
+            <label class="form-label fw-semibold text-secondary">Korisničko ime</label>
+            <input type="text" class="form-control form-control-lg bg-light border-0" name="username" [(ngModel)]="username" required>
+          </div>
+          <div class="mb-4 text-start">
+            <label class="form-label fw-semibold text-secondary">Lozinka</label>
+            <input type="password" class="form-control form-control-lg bg-light border-0" name="password" [(ngModel)]="password" required>
+          </div>
+          <div *ngIf="errorMessage" class="alert alert-danger py-2">{{ errorMessage }}</div>
+          <button type="submit" class="btn btn-dark btn-lg w-100 fw-bold mt-3 shadow-sm login-btn">Prijavi se</button>
+        </form>
+      </div>
+      
     </div>
   </div>
 </div>
