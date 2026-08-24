@@ -15,8 +15,8 @@ spring:
   # Konfiguracija za JPA / Hibernate
   jpa:
     hibernate:
-      ddl-auto: update # Automatski kreira/azurira tabele na osnovu Java entiteta
-    show-sql: true     # Prikazuje SQL upite u konzoli (korisno za debagovanje)
+      ddl-auto: update
+    show-sql: true
     properties:
       hibernate:
         format_sql: true
