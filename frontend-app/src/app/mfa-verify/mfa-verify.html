@@ -1,1 +1,31 @@
-<p>mfa-verify works!</p>
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-5">
+      <div class="card shadow border-danger">
+        <div class="card-header bg-danger text-white text-center">
+          <h4>Dodatna bezbednosna provera</h4>
+        </div>
+        <div class="card-body text-center">
+          <p>Uočen je sumnjiv pokušaj prijave. Unesi kod iz Authenticator aplikacije.</p>
+          <form (ngSubmit)="onVerify()">
+            <div class="mb-3 text-start">
+              <input type="text" 
+            class="form-control text-center fs-4" 
+            name="mfaCode" 
+            [(ngModel)]="mfaCode" 
+            placeholder="123456" 
+            maxlength="6" 
+            inputmode="numeric" 
+            pattern="[0-9]*" 
+            autocomplete="one-time-code"
+            style="letter-spacing: 0.5rem;"
+            required>
+            </div>
+            <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+            <button type="submit" class="btn btn-danger w-100">Potvrdi identitet</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

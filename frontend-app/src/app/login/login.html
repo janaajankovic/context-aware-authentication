@@ -1,1 +1,25 @@
-<p>login works!</p>
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-5">
+      <div class="card shadow">
+        <div class="card-header bg-dark text-white text-center">
+          <h4>Prijava u sistem</h4>
+        </div>
+        <div class="card-body">
+          <form (ngSubmit)="onLogin()">
+            <div class="mb-3">
+              <label class="form-label">Korisničko ime</label>
+              <input type="text" class="form-control" name="username" [(ngModel)]="username" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Lozinka</label>
+              <input type="password" class="form-control" name="password" [(ngModel)]="password" required>
+            </div>
+            <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+            <button type="submit" class="btn btn-dark w-100">Prijavi se</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

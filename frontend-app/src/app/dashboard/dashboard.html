@@ -1,1 +1,15 @@
-<p>dashboard works!</p>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+  <div class="container">
+    <a class="navbar-brand" href="#">RiskAuth Dashboard</a>
+    <button class="btn btn-outline-light btn-sm" (click)="logout()">Odjavi se</button>
+  </div>
+</nav>
+
+<div class="container mt-5">
+  <div class="alert alert-success shadow-sm" role="alert">
+    <h4 class="alert-heading">Uspešna autentifikacija!</h4>
+    <p>Dobrodošla u zaštićeni deo sistema. Tvoj identitet je potvrđen na osnovu dinamičke procene rizika i JWT token je uspešno izdat.</p>
+    <hr>
+    <p class="mb-0 text-muted">Status: Autentifikovan | Nivo rizika procenjen od strane Python Risk Engine-a.</p>
+  </div>
+</div>

@@ -1,11 +1,24 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [],
-  templateUrl: './dashboard.html',
-  styleUrl: './dashboard.css',
+  standalone: true,
+  templateUrl: './dashboard.html'
 })
-export class Dashboard {
+export class Dashboard implements OnInit {
+  
+  constructor(private router: Router) {}
 
+  ngOnInit() {
+    const token = localStorage.getItem('jwt_token');
+    if (!token) {
+      this.router.navigate(['/login']);
+    }
+  }
+
+  logout() {
+    localStorage.removeItem('jwt_token');
+    this.router.navigate(['/login']);
+  }
 }

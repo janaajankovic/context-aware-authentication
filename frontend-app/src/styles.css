@@ -1,1 +1,52 @@
-/* You can add global styles to this file, and also import other style files */
+/* Blaga siva pozadina za ceo sistem umesto drečavo bele */
+body {
+  background-color: #f4f6f9;
+  font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Centralno pozicioniranje formi */
+.container.mt-5 {
+  margin-top: 12vh !important;
+}
+
+/* Stilizacija kartica da izgledaju modernije */
+.card {
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+}
+
+.card-header {
+  border-top-left-radius: 8px !important;
+  border-top-right-radius: 8px !important;
+  padding: 1.2rem;
+  border-bottom: none;
+}
+
+/* Tamna formalna boja za standardni login */
+.bg-dark {
+  background-color: #2b3541 !important; 
+}
+
+/* Standardna crvena za bezbednosne alarme (MFA) */
+.bg-danger {
+  background-color: #d32f2f !important;
+}
+
+/* Elegantniji fokus na poljima za unos */
+.form-control {
+  border-radius: 6px;
+  padding: 0.6rem 1rem;
+}
+
+.form-control:focus {
+  border-color: #2b3541;
+  box-shadow: 0 0 0 0.2rem rgba(43, 53, 65, 0.2);
+}
+
+.btn {
+  padding: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
