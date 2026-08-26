@@ -26,6 +26,17 @@ DB_CONFIG = {
     "port": "5433"
 }
 
+KNOWN_THREAT_IPS = {
+    "104.21.34.4": "Poznat VPN izlazni čvor",
+    "198.51.100.14": "Tor Exit Node",
+    "8.8.8.8": "Data Center (Bot mrežni opseg)",
+    "203.0.113.50": "Prijavljena Spam/Malware aktivnost"
+}
+
+def check_ip_reputation(ip_address: str) -> str:
+    """Proverava da li je IP adresa na globalnoj crnoj listi."""
+    return KNOWN_THREAT_IPS.get(ip_address, None)
+
 def get_country_from_ip(ip_address: str) -> str:
     """Proverava iz koje države dolazi IP adresa koristeći besplatan API."""
     # Lokalni IP (kada ti testiraš sa svog računara)
@@ -83,7 +94,7 @@ def analyze_risk(context: LoginContext):
     # Pravilo 1: Sumnjivi HTTP klijenti (Skripte i botovi)
     user_agent_lower = context.user_agent.lower()
     if "curl" in user_agent_lower or "postman" in user_agent_lower or "python-requests" in user_agent_lower:
-        risk_score += 0.4
+        risk_score += 0.7
         reasons.append("Sumnjiv User-Agent (Pokušaj prijave preko API alata/skripte umesto pregledača)")
 
     # Pravilo 2: Sumnjivo vreme prijave (npr. noću između 02:00 i 05:00)
@@ -105,6 +116,12 @@ def analyze_risk(context: LoginContext):
     if not is_known_device_or_ip(context.user_id, context.ip_address):
         risk_score += 0.4
         reasons.append("Prijava sa potpuno nove IP adrese (Nepoznat uređaj/lokacija za ovog korisnika)")
+
+    # Pravilo 5: IP Reputacija (Threat Intelligence)
+    threat_reason = check_ip_reputation(context.ip_address)
+    if threat_reason:
+        risk_score += 0.5
+        reasons.append(f"IP Reputacija: Adresa je na crnoj listi ({threat_reason})")
         
     # Ograničavamo maksimalan rizik na 1.0 (100%)
     risk_score = min(risk_score, 1.0)
