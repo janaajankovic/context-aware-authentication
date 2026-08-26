@@ -2,8 +2,10 @@ package com.example.riskauth.controller;
 
 import com.example.riskauth.dto.*;
 import com.example.riskauth.model.DeviceContext;
+import com.example.riskauth.model.LoginHistory;
 import com.example.riskauth.model.User;
 import com.example.riskauth.repository.DeviceContextRepository;
+import com.example.riskauth.repository.LoginHistoryRepository;
 import com.example.riskauth.repository.UserRepository;
 import com.example.riskauth.security.JwtUtil;
 import com.example.riskauth.service.ContextExtractionService;
@@ -35,6 +37,7 @@ public class AuthController {
     @Autowired private ContextExtractionService contextExtractionService;
     @Autowired private RiskEngineClientService riskEngineClientService;
     @Autowired private MfaService mfaService;
+    @Autowired private LoginHistoryRepository loginHistoryRepository;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody AuthRequest authRequest, HttpServletRequest request) {
@@ -45,6 +48,10 @@ public class AuthController {
                     new UsernamePasswordAuthenticationToken(authRequest.getUsername(), authRequest.getPassword())
             );
         } catch (Exception e) {
+            String ipAddress = contextExtractionService.extractClientIp(request);
+            String userAgent = contextExtractionService.extractUserAgent(request);
+            loginHistoryRepository.save(new LoginHistory(authRequest.getUsername(), ipAddress, userAgent, "FAILED_BAD_PASSWORD"));
+
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Neispravan username ili lozinka");
         }
 
@@ -77,6 +84,13 @@ public class AuthController {
 
         // 6. Policy Engine: Donošenje odluke
         if (riskResponse.isRequiresMfa()) {
+            // Beležimo u Audit log da je sistem zatražio MFA
+            loginHistoryRepository.save(new LoginHistory(
+                    user.getUsername(),
+                    ipAddress,
+                    userAgent,
+                    "MFA_REQUIRED"
+            ));
             // Rizik je previsok, za sada vraćamo poruku (u sledećoj fazi ovde ide Google Authenticator)
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body("Rizik je prevelik (" + riskResponse.getRiskScore() + "). Zahteva se MFA: " + riskResponse.getReasons());
@@ -86,11 +100,18 @@ public class AuthController {
         final UserDetails userDetails = userDetailsService.loadUserByUsername(user.getUsername());
         final String jwt = jwtUtil.generateToken(userDetails);
 
+        loginHistoryRepository.save(new LoginHistory(
+                user.getUsername(),
+                ipAddress,
+                userAgent,
+                "SUCCESS_LOW_RISK"
+        ));
+
         return ResponseEntity.ok(new AuthResponse(jwt));
     }
 
     @PostMapping("/verify-mfa")
-    public ResponseEntity<?> verifyMfa(@RequestBody MfaVerificationRequest request) {
+    public ResponseEntity<?> verifyMfa(@RequestBody MfaVerificationRequest request, HttpServletRequest httpRequest) {
         User user = userRepository.findByUsername(request.getUsername()).orElse(null);
 
         if (user == null) {
@@ -100,13 +121,19 @@ public class AuthController {
         // Proveravamo da li se kod sa telefona poklapa sa onim što algoritam očekuje
         boolean isCodeValid = mfaService.verifyCode(user.getMfaSecret(), request.getMfaCode());
 
+        String ipAddress = contextExtractionService.extractClientIp(httpRequest);
+        String userAgent = contextExtractionService.extractUserAgent(httpRequest);
+
         if (!isCodeValid) {
+            loginHistoryRepository.save(new LoginHistory(user.getUsername(), ipAddress, userAgent, "FAILED_MFA"));
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Neispravan MFA kod!");
         }
 
         // Ako je kod tačan, izdajemo JWT token (Korisnik je uspešno otključao nalog)
         final UserDetails userDetails = userDetailsService.loadUserByUsername(user.getUsername());
         final String jwt = jwtUtil.generateToken(userDetails);
+
+        loginHistoryRepository.save(new LoginHistory(user.getUsername(), ipAddress, userAgent, "SUCCESS_MFA_VERIFIED"));
 
         return ResponseEntity.ok(new AuthResponse(jwt));
     }
