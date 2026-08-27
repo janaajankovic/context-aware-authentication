@@ -1,10 +1,15 @@
 package com.example.riskauth.service;
 
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.client.j2se.MatrixToImageWriter;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.qrcode.QRCodeWriter;
 import com.warrenstrange.googleauth.GoogleAuthenticator;
 import com.warrenstrange.googleauth.GoogleAuthenticatorKey;
 import org.springframework.stereotype.Service;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+
+import java.io.ByteArrayOutputStream;
+import java.util.Base64;
 
 @Service
 public class MfaService {
@@ -20,13 +25,22 @@ public class MfaService {
         return gAuth.authorize(secret, code);
     }
 
-    public String getQrCodeUrl(String username, String secret) {
+    public String getQrCodeImageBase64(String username, String secret) {
         String issuer = "RiskAuth-Master";
         String otpauthUri = String.format("otpauth://totp/%s:%s?secret=%s&issuer=%s",
                 issuer, username, secret, issuer);
 
-        // Koristimo qrserver API
-        return "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data="
-                + URLEncoder.encode(otpauthUri, StandardCharsets.UTF_8);
+        try {
+            QRCodeWriter qrCodeWriter = new QRCodeWriter();
+            BitMatrix bitMatrix = qrCodeWriter.encode(otpauthUri, BarcodeFormat.QR_CODE, 200, 200);
+
+            ByteArrayOutputStream pngOutputStream = new ByteArrayOutputStream();
+            MatrixToImageWriter.writeToStream(bitMatrix, "PNG", pngOutputStream);
+            byte[] pngData = pngOutputStream.toByteArray();
+
+            return "data:image/png;base64," + Base64.getEncoder().encodeToString(pngData);
+        } catch (Exception e) {
+            throw new RuntimeException("Greška pri lokalnom generisanju QR koda", e);
+        }
     }
 }

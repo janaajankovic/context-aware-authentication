@@ -38,14 +38,14 @@ public class DataSeeder {
             if (user.getMfaSecret() == null || user.getMfaSecret().isEmpty()) {
                 String secret = mfaService.generateSecretKey();
                 user.setMfaSecret(secret);
-                needsSave = true; // Beležimo da smo dodali MFA
+                needsSave = true;
 
-                String qrCodeUrl = mfaService.getQrCodeUrl(user.getUsername(), secret);
+                String qrCodeUrl = mfaService.getQrCodeImageBase64(user.getUsername(), secret);
                 System.out.println("Skeniraj ovaj link u pregledaču da dobiješ QR kod:");
                 System.out.println(qrCodeUrl);
             } else {
                 // Ako korisnik VEĆ IMA ključ, samo ispisujemo ažurirani QR link
-                String qrCodeUrl = mfaService.getQrCodeUrl(user.getUsername(), user.getMfaSecret());
+                String qrCodeUrl = mfaService.getQrCodeImageBase64(user.getUsername(), user.getMfaSecret());
                 System.out.println("Novi (ispravljeni) QR kod link:");
                 System.out.println(qrCodeUrl);
             }

@@ -23,6 +23,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -84,16 +87,19 @@ public class AuthController {
 
         // 6. Policy Engine: Donošenje odluke
         if (riskResponse.isRequiresMfa()) {
-            // Beležimo u Audit log da je sistem zatražio MFA
-            loginHistoryRepository.save(new LoginHistory(
-                    user.getUsername(),
-                    ipAddress,
-                    userAgent,
-                    "MFA_REQUIRED"
-            ));
-            // Rizik je previsok, za sada vraćamo poruku (u sledećoj fazi ovde ide Google Authenticator)
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body("Rizik je prevelik (" + riskResponse.getRiskScore() + "). Zahteva se MFA: " + riskResponse.getReasons());
+            loginHistoryRepository.save(new LoginHistory(user.getUsername(), ipAddress, userAgent, "MFA_REQUIRED"));
+
+            // NOVO: Izdajemo PRIVREMENI token
+            final UserDetails userDetails = userDetailsService.loadUserByUsername(user.getUsername());
+            final String preAuthToken = jwtUtil.generatePreAuthToken(userDetails);
+
+            // Šaljemo ga nazad klijentu uz status 202 (Accepted) umesto 403 (Forbidden)
+            Map<String, String> response = new HashMap<>();
+            response.put("status", "MFA_REQUIRED");
+            response.put("preAuthToken", preAuthToken);
+            response.put("message", "Rizik je prevelik (" + riskResponse.getRiskScore() + "). Zahteva se MFA.");
+
+            return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
         }
 
         // Rizik je mali, vraćamo JWT token
@@ -111,30 +117,51 @@ public class AuthController {
     }
 
     @PostMapping("/verify-mfa")
-    public ResponseEntity<?> verifyMfa(@RequestBody MfaVerificationRequest request, HttpServletRequest httpRequest) {
-        User user = userRepository.findByUsername(request.getUsername()).orElse(null);
+    public ResponseEntity<?> verifyMfa(
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestBody MfaVerificationRequest request,
+            HttpServletRequest httpRequest) {
 
-        if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Korisnik nije pronađen");
+        // 1. BEZBEDNOSNA PROVERA: Da li je korisnik uopšte prošao prvi korak?
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Nedostaje Pre-Auth token! Prijavite se prvo lozinkom.");
         }
 
-        // Proveravamo da li se kod sa telefona poklapa sa onim što algoritam očekuje
-        boolean isCodeValid = mfaService.verifyCode(user.getMfaSecret(), request.getMfaCode());
+        String preAuthToken = authHeader.substring(7);
 
-        String ipAddress = contextExtractionService.extractClientIp(httpRequest);
-        String userAgent = contextExtractionService.extractUserAgent(httpRequest);
+        try {
+            // Izvlačimo username direktno iz tokena (tako da napadač ne može da podmetne tuđe ime u JSON-u)
+            String usernameFromToken = jwtUtil.extractUsername(preAuthToken);
 
-        if (!isCodeValid) {
-            loginHistoryRepository.save(new LoginHistory(user.getUsername(), ipAddress, userAgent, "FAILED_MFA"));
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Neispravan MFA kod!");
+            if (!jwtUtil.isPreAuthToken(preAuthToken) || jwtUtil.extractExpiration(preAuthToken).before(new Date())) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token je nevalidan ili je istekao.");
+            }
+
+            User user = userRepository.findByUsername(usernameFromToken).orElse(null);
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Korisnik nije pronađen");
+            }
+
+            // 2. Provera MFA koda
+            boolean isCodeValid = mfaService.verifyCode(user.getMfaSecret(), request.getMfaCode());
+            String ipAddress = contextExtractionService.extractClientIp(httpRequest);
+            String userAgent = contextExtractionService.extractUserAgent(httpRequest);
+
+            if (!isCodeValid) {
+                loginHistoryRepository.save(new LoginHistory(user.getUsername(), ipAddress, userAgent, "FAILED_MFA"));
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Neispravan MFA kod!");
+            }
+
+            // 3. USPEH: Izdavanje PRAVOG tokena (sa punim pravima)
+            final UserDetails userDetails = userDetailsService.loadUserByUsername(user.getUsername());
+            final String finalJwt = jwtUtil.generateToken(userDetails);
+
+            loginHistoryRepository.save(new LoginHistory(user.getUsername(), ipAddress, userAgent, "SUCCESS_MFA_VERIFIED"));
+
+            return ResponseEntity.ok(new AuthResponse(finalJwt));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Nevalidan token struktura!");
         }
-
-        // Ako je kod tačan, izdajemo JWT token (Korisnik je uspešno otključao nalog)
-        final UserDetails userDetails = userDetailsService.loadUserByUsername(user.getUsername());
-        final String jwt = jwtUtil.generateToken(userDetails);
-
-        loginHistoryRepository.save(new LoginHistory(user.getUsername(), ipAddress, userAgent, "SUCCESS_MFA_VERIFIED"));
-
-        return ResponseEntity.ok(new AuthResponse(jwt));
     }
 }

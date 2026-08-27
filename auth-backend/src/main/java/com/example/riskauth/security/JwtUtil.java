@@ -21,6 +21,7 @@ public class JwtUtil {
 
     // Token traje 10 sati
     private final long EXPIRATION_TIME = 1000 * 60 * 60 * 10;
+    private final long PRE_AUTH_EXPIRATION_TIME = 1000 * 60 * 5;
 
     public JwtUtil() {
         // Fail-Fast sigurnosna provera: Ključ mora postojati i mora biti dug najmanje 32 karaktera (256 bita)
@@ -61,6 +62,24 @@ public class JwtUtil {
         return createToken(claims, userDetails.getUsername());
     }
 
+    // Generiše token koji dokazuje da je lozinka tačna, ali zabranjuje pristup sistemu
+    public String generatePreAuthToken(UserDetails userDetails) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("isPreAuth", true); // Ovo ga razlikuje od pravog tokena
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(userDetails.getUsername())
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + PRE_AUTH_EXPIRATION_TIME))
+                .signWith(getSigningKey())
+                .compact();
+    }
+
+    // Proverava da li je token samo privremeni
+    public Boolean isPreAuthToken(String token) {
+        Boolean isPreAuth = extractClaim(token, claims -> claims.get("isPreAuth", Boolean.class));
+        return isPreAuth != null && isPreAuth;
+    }
     private String createToken(Map<String, Object> claims, String subject) {
         return Jwts.builder()
                 .setClaims(claims)
