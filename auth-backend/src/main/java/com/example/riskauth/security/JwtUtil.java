@@ -16,11 +16,23 @@ import java.util.function.Function;
 @Component
 public class JwtUtil {
 
-    // Generišemo siguran ključ za enkripciju tokena
-    private final Key SECRET_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+    // Čitamo fiksni tajni ključ iz sistemskih varijabli
+    private static final String JWT_SECRET_STRING = System.getenv("JWT_SECRET");
 
     // Token traje 10 sati
     private final long EXPIRATION_TIME = 1000 * 60 * 60 * 10;
+
+    public JwtUtil() {
+        // Fail-Fast sigurnosna provera: Ključ mora postojati i mora biti dug najmanje 32 karaktera (256 bita)
+        if (JWT_SECRET_STRING == null || JWT_SECRET_STRING.length() < 32) {
+            throw new IllegalStateException("KRITIČNA BEZBEDNOSNA GREŠKA: JWT_SECRET nije setovan u sistemskim varijablama ili je kraći od 32 karaktera!");
+        }
+    }
+
+    // Metoda za pretvaranje našeg stringa u validan kriptografski ključ
+    private Key getSigningKey() {
+        return Keys.hmacShaKeyFor(JWT_SECRET_STRING.getBytes());
+    }
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -36,7 +48,8 @@ public class JwtUtil {
     }
 
     private Claims extractAllClaims(String token) {
-        return Jwts.parserBuilder().setSigningKey(SECRET_KEY).build().parseClaimsJws(token).getBody();
+        // Dinamički ključ zamenjen fiksiranim getSigningKey()
+        return Jwts.parserBuilder().setSigningKey(getSigningKey()).build().parseClaimsJws(token).getBody();
     }
 
     private Boolean isTokenExpired(String token) {
@@ -54,7 +67,7 @@ public class JwtUtil {
                 .setSubject(subject)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
-                .signWith(SECRET_KEY)
+                .signWith(getSigningKey()) // Dinamički ključ zamenjen fiksiranim getSigningKey()
                 .compact();
     }
 

@@ -1,5 +1,6 @@
 package com.example.riskauth.model;
 
+import com.example.riskauth.security.MfaSecretEncryptor;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -28,7 +29,7 @@ public class User {
     @Column(nullable = false)
     private String email;
 
-    // Za MFA integraciju kasnije (čuvaćemo enkriptovan Google Authenticator secret)
+    @Convert(converter = MfaSecretEncryptor.class)
     @Column(name = "mfa_secret")
     private String mfaSecret;
 

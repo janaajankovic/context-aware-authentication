@@ -6,10 +6,6 @@ import org.springframework.stereotype.Service;
 @Service
 public class ContextExtractionService {
 
-    /**
-     * Izdvaja pravu IP adresu klijenta.
-     * Proverava X-Forwarded-For zaglavlje u slučaju da zahtev prolazi kroz proxy ili load balancer.
-     */
     public String extractClientIp(HttpServletRequest request) {
         String clientIp = request.getHeader("X-Forwarded-For");
 
@@ -25,9 +21,7 @@ public class ContextExtractionService {
         return clientIp;
     }
 
-    /**
-     * Izdvaja User-Agent (tip uređaja, browser, operativni sistem).
-     */
+    // Izdvaja User-Agent (tip uređaja, browser, operativni sistem)
     public String extractUserAgent(HttpServletRequest request) {
         String userAgent = request.getHeader("User-Agent");
         return (userAgent != null) ? userAgent : "Unknown Device";

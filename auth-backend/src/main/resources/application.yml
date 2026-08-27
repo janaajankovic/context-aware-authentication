@@ -7,9 +7,9 @@ spring:
 
   # Konfiguracija za PostgreSQL
   datasource:
-    url: jdbc:postgresql://localhost:5433/risk_auth_db
-    username: admin
-    password: admin_password
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   # Konfiguracija za JPA / Hibernate
