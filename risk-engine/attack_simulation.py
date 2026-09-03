@@ -58,13 +58,15 @@ def send_request(req_id, is_legit=False):
         latency = round((time.time() - start_time) * 1000)
         status = response.status_code
         
-        # Interpretacija odgovora
+        # Interpretacija odgovora prema novoj Spring Boot arhitekturi
         if status == 200:
-            outcome = "USPEH (Ulogovan)" if is_legit else "KRITIČNO (Sistem probijen!)"
-        elif status == 403:
-            outcome = "BLOKIRANO NAPREDOVANJE (MFA Štit)"
+            outcome = "USPEH (Ulogovan - Nizak rizik)" if is_legit else "KRITIČNO (Sistem probijen!)"
+        elif status == 202:
+            outcome = "MFA ZAHTEVAN (Visok rizik)"
         elif status == 401:
             outcome = "ODBIJENO (Pogrešna lozinka)"
+        elif status == 429:
+            outcome = "BLOKIRANO (Redis Rate Limit)"
         else:
             outcome = f"NEPOZNATO ({status})"
             

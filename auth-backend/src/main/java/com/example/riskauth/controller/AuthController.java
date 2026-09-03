@@ -9,9 +9,12 @@ import com.example.riskauth.repository.LoginHistoryRepository;
 import com.example.riskauth.repository.UserRepository;
 import com.example.riskauth.security.JwtUtil;
 import com.example.riskauth.service.ContextExtractionService;
+import com.example.riskauth.service.LoginAttemptService;
 import com.example.riskauth.service.MfaService;
 import com.example.riskauth.service.RiskEngineClientService;
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,6 +35,9 @@ import java.util.Map;
 @CrossOrigin(origins = "http://localhost:4200")
 public class AuthController {
 
+    // KREIRANJE LOGGERA ZA ELK STACK
+    private static final Logger auditLogger = LoggerFactory.getLogger(AuthController.class);
+
     @Autowired private AuthenticationManager authenticationManager;
     @Autowired private JwtUtil jwtUtil;
     @Autowired private UserDetailsService userDetailsService;
@@ -41,31 +47,46 @@ public class AuthController {
     @Autowired private RiskEngineClientService riskEngineClientService;
     @Autowired private MfaService mfaService;
     @Autowired private LoginHistoryRepository loginHistoryRepository;
+    @Autowired private LoginAttemptService loginAttemptService;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody AuthRequest authRequest, HttpServletRequest request) {
 
-        // 1. Provera šifre
+        String ipAddress = contextExtractionService.extractClientIp(request);
+        String userAgent = contextExtractionService.extractUserAgent(request);
+
+        if (loginAttemptService.isBlocked(ipAddress)) {
+            // ELK LOG: Blokirana IP adresa zbog Rate Limit-a
+            auditLogger.warn("AUDIT_ALERT: Blokirana prijava zbog Rate Limit-a za IP: {}", ipAddress);
+
+            loginHistoryRepository.save(new LoginHistory(authRequest.getUsername(), ipAddress, userAgent, "BLOCKED_RATE_LIMIT"));
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body("Previše neuspješnih pokušaja. Pokušajte ponovo za 15 minuta.");
+        }
+
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(authRequest.getUsername(), authRequest.getPassword())
             );
         } catch (Exception e) {
-            String ipAddress = contextExtractionService.extractClientIp(request);
-            String userAgent = contextExtractionService.extractUserAgent(request);
+            // REDIS: Bilježimo neuspješan pokušaj
+            loginAttemptService.loginFailed(ipAddress);
+
+            // ELK LOG: Pogrešna lozinka
+            auditLogger.warn("AUDIT_ALERT: Neuspjesna prijava (pogresna lozinka) za korisnika: {} sa IP: {}", authRequest.getUsername(), ipAddress);
+
             loginHistoryRepository.save(new LoginHistory(authRequest.getUsername(), ipAddress, userAgent, "FAILED_BAD_PASSWORD"));
 
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Neispravan username ili lozinka");
         }
 
-        // 2. Izdvajanje korisnika i konteksta (IP, User-Agent, Vreme)
+        // REDIS: Resetujemo brojač jer je šifra ispravna
+        loginAttemptService.loginSucceeded(ipAddress);
+
         User user = userRepository.findByUsername(authRequest.getUsername()).get();
-        String ipAddress = contextExtractionService.extractClientIp(request);
-        String userAgent = contextExtractionService.extractUserAgent(request);
         LocalDateTime now = LocalDateTime.now();
         String timeString = now.format(DateTimeFormatter.ofPattern("HH:mm:ss"));
 
-        // 3. Pakovanje podataka za Python Risk Engine
         RiskAnalysisRequest riskRequest = RiskAnalysisRequest.builder()
                 .userId(user.getId())
                 .ipAddress(ipAddress)
@@ -73,10 +94,8 @@ public class AuthController {
                 .loginTime(timeString)
                 .build();
 
-        // 4. Komunikacija sa Pythonom
         RiskAnalysisResponse riskResponse = riskEngineClientService.analyzeRisk(riskRequest);
 
-        // 5. Čuvanje istorije u bazu
         DeviceContext contextLog = new DeviceContext();
         contextLog.setUser(user);
         contextLog.setIpAddress(ipAddress);
@@ -85,15 +104,17 @@ public class AuthController {
         contextLog.setSuccessful(true);
         deviceContextRepository.save(contextLog);
 
-        // 6. Policy Engine: Donošenje odluke
+        // 8. Policy Engine: Donošenje odluke
         if (riskResponse.isRequiresMfa()) {
+            // ELK LOG: Visok rizik, traži se MFA
+            auditLogger.info("AUDIT_EVENT: Detektovan visok rizik ({}). Zahtijeva se MFA za korisnika: {}", riskResponse.getRiskScore(), user.getUsername());
+
             loginHistoryRepository.save(new LoginHistory(user.getUsername(), ipAddress, userAgent, "MFA_REQUIRED"));
 
-            // NOVO: Izdajemo PRIVREMENI token
+            // Izdajemo PRIVREMENI token
             final UserDetails userDetails = userDetailsService.loadUserByUsername(user.getUsername());
             final String preAuthToken = jwtUtil.generatePreAuthToken(userDetails);
 
-            // Šaljemo ga nazad klijentu uz status 202 (Accepted) umesto 403 (Forbidden)
             Map<String, String> response = new HashMap<>();
             response.put("status", "MFA_REQUIRED");
             response.put("preAuthToken", preAuthToken);
@@ -102,7 +123,10 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
         }
 
-        // Rizik je mali, vraćamo JWT token
+        // ELK LOG: Uspješna prijava bez MFA
+        auditLogger.info("AUDIT_EVENT: Uspjesna prijava (nizak rizik) za korisnika: {}", user.getUsername());
+
+        // Rizik je mali, vraćamo glavni JWT token
         final UserDetails userDetails = userDetailsService.loadUserByUsername(user.getUsername());
         final String jwt = jwtUtil.generateToken(userDetails);
 
@@ -122,7 +146,6 @@ public class AuthController {
             @RequestBody MfaVerificationRequest request,
             HttpServletRequest httpRequest) {
 
-        // 1. BEZBEDNOSNA PROVERA: Da li je korisnik uopšte prošao prvi korak?
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Nedostaje Pre-Auth token! Prijavite se prvo lozinkom.");
         }
@@ -130,7 +153,7 @@ public class AuthController {
         String preAuthToken = authHeader.substring(7);
 
         try {
-            // Izvlačimo username direktno iz tokena (tako da napadač ne može da podmetne tuđe ime u JSON-u)
+            // Izvlačimo username direktno iz tokena
             String usernameFromToken = jwtUtil.extractUsername(preAuthToken);
 
             if (!jwtUtil.isPreAuthToken(preAuthToken) || jwtUtil.extractExpiration(preAuthToken).before(new Date())) {
@@ -142,17 +165,21 @@ public class AuthController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Korisnik nije pronađen");
             }
 
-            // 2. Provera MFA koda
             boolean isCodeValid = mfaService.verifyCode(user.getMfaSecret(), request.getMfaCode());
             String ipAddress = contextExtractionService.extractClientIp(httpRequest);
             String userAgent = contextExtractionService.extractUserAgent(httpRequest);
 
             if (!isCodeValid) {
+                // ELK LOG: Pogrešan MFA kod
+                auditLogger.warn("AUDIT_ALERT: Neuspjesna MFA verifikacija (pogresan kod) za korisnika: {} sa IP: {}", user.getUsername(), ipAddress);
+
                 loginHistoryRepository.save(new LoginHistory(user.getUsername(), ipAddress, userAgent, "FAILED_MFA"));
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Neispravan MFA kod!");
             }
 
-            // 3. USPEH: Izdavanje PRAVOG tokena (sa punim pravima)
+            // ELK LOG: Uspješna MFA verifikacija
+            auditLogger.info("AUDIT_EVENT: Uspjesna MFA verifikacija i prijava za korisnika: {}", user.getUsername());
+
             final UserDetails userDetails = userDetailsService.loadUserByUsername(user.getUsername());
             final String finalJwt = jwtUtil.generateToken(userDetails);
 
@@ -161,7 +188,7 @@ public class AuthController {
             return ResponseEntity.ok(new AuthResponse(finalJwt));
 
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Nevalidan token struktura!");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Nevalidna token struktura!");
         }
     }
 }

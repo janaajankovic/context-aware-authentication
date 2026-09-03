@@ -26,12 +26,13 @@ export class Login {
           this.router.navigate(['/dashboard']);
         }
       },
-      error: (err) => {
-        // Ako je rizik veliki, Spring Boot vraća 403 Forbidden
-        if (err.status === 403) {
-          this.router.navigate(['/verify-mfa']);
+        error: (err) => {
+        if (err.status === 429) {
+          this.errorMessage = 'Previše neuspješnih pokušaja. Pokušajte ponovo za 15 minuta.';
+        } else if (err.status === 401) {
+          this.errorMessage = 'Neispravno korisničko ime ili lozinka.';
         } else {
-          this.errorMessage = 'Pogrešni podaci ili greška na serveru.';
+          this.errorMessage = 'Došlo je do greške pri komunikaciji sa serverom.';
         }
       }
     });

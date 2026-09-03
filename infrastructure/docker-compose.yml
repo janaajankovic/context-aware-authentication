@@ -18,5 +18,36 @@ services:
     ports:
       - "6379:6379"
 
+  elasticsearch:
+    image: elasticsearch:8.10.2
+    container_name: auth_elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+    mem_limit: 1g
+
+  logstash:
+    image: logstash:8.10.2
+    container_name: auth_logstash
+    volumes:
+      - ./logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+    ports:
+      - "50000:50000"
+    depends_on:
+      - elasticsearch
+
+  kibana:
+    image: kibana:8.10.2
+    container_name: auth_kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+
 volumes:
   postgres_data:
