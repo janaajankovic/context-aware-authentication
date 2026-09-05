@@ -2,6 +2,8 @@ package com.example.riskauth.service;
 
 import com.example.riskauth.dto.RiskAnalysisRequest;
 import com.example.riskauth.dto.RiskAnalysisResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -10,10 +12,12 @@ import org.springframework.web.client.RestTemplate;
 @Service
 public class RiskEngineClientService {
 
+    // Kreiramo logger za audit sistem
+    private static final Logger auditLogger = LoggerFactory.getLogger(RiskEngineClientService.class);
+
     private final RestTemplate restTemplate;
     private final String pythonEngineUrl;
 
-    // Ako varijabla RISK_ENGINE_URL nije setovana u sistemskim varijablama, koristiće localhost:8001
     public RiskEngineClientService(
             RestTemplate restTemplate,
             @Value("${RISK_ENGINE_URL:http://localhost:8001/api/analyze-risk}") String pythonEngineUrl) {
@@ -32,6 +36,7 @@ public class RiskEngineClientService {
 
         } catch (Exception e) {
             System.err.println("KRITIČNO: Python Risk Engine nije dostupan! Razlog: " + e.getMessage());
+            auditLogger.error("AUDIT_ERROR: Python Risk Engine nije dostupan! Razlog: {}", e.getMessage());
 
             RiskAnalysisResponse failSafeResponse = new RiskAnalysisResponse();
             failSafeResponse.setRiskScore(1.0);

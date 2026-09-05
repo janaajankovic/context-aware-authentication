@@ -35,7 +35,6 @@ import java.util.Map;
 @CrossOrigin(origins = "http://localhost:4200")
 public class AuthController {
 
-    // KREIRANJE LOGGERA ZA ELK STACK
     private static final Logger auditLogger = LoggerFactory.getLogger(AuthController.class);
 
     @Autowired private AuthenticationManager authenticationManager;
@@ -56,7 +55,7 @@ public class AuthController {
         String userAgent = contextExtractionService.extractUserAgent(request);
 
         if (loginAttemptService.isBlocked(ipAddress)) {
-            // ELK LOG: Blokirana IP adresa zbog Rate Limit-a
+            // ELK LOG: Blokirana IP adresa zbog Rate Limit-a (WARN)
             auditLogger.warn("AUDIT_ALERT: Blokirana prijava zbog Rate Limit-a za IP: {}", ipAddress);
 
             loginHistoryRepository.save(new LoginHistory(authRequest.getUsername(), ipAddress, userAgent, "BLOCKED_RATE_LIMIT"));
@@ -72,7 +71,7 @@ public class AuthController {
             // REDIS: Bilježimo neuspješan pokušaj
             loginAttemptService.loginFailed(ipAddress);
 
-            // ELK LOG: Pogrešna lozinka
+            // ELK LOG: Pogrešna lozinka (WARN)
             auditLogger.warn("AUDIT_ALERT: Neuspjesna prijava (pogresna lozinka) za korisnika: {} sa IP: {}", authRequest.getUsername(), ipAddress);
 
             loginHistoryRepository.save(new LoginHistory(authRequest.getUsername(), ipAddress, userAgent, "FAILED_BAD_PASSWORD"));
@@ -94,7 +93,15 @@ public class AuthController {
                 .loginTime(timeString)
                 .build();
 
-        RiskAnalysisResponse riskResponse = riskEngineClientService.analyzeRisk(riskRequest);
+        // Sigurno pozivanje Risk Engine-a uz hvatanje tehničke greške
+        RiskAnalysisResponse riskResponse;
+        try {
+            riskResponse = riskEngineClientService.analyzeRisk(riskRequest);
+        } catch (Exception e) {
+            // ELK LOG: Kritična tehnička greška u komunikaciji sa Risk Engine-om (ERROR)
+            auditLogger.error("AUDIT_ERROR: Neuspješna komunikacija sa Risk Engine микросервисом за корисника: {}. Greška: {}", user.getUsername(), e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Greшка при анализи ризика.");
+        }
 
         DeviceContext contextLog = new DeviceContext();
         contextLog.setUser(user);
@@ -106,7 +113,7 @@ public class AuthController {
 
         // 8. Policy Engine: Donošenje odluke
         if (riskResponse.isRequiresMfa()) {
-            // ELK LOG: Visok rizik, traži se MFA
+            // ELK LOG: Visok rizik, traži se MFA (INFO)
             auditLogger.info("AUDIT_EVENT: Detektovan visok rizik ({}). Zahtijeva se MFA za korisnika: {}", riskResponse.getRiskScore(), user.getUsername());
 
             loginHistoryRepository.save(new LoginHistory(user.getUsername(), ipAddress, userAgent, "MFA_REQUIRED"));
@@ -123,8 +130,8 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
         }
 
-        // ELK LOG: Uspješna prijava bez MFA
-        auditLogger.info("AUDIT_EVENT: Uspjesna prijava (nizak rizik) za korisnika: {}", user.getUsername());
+        // ELK LOG: Uspješna prijava bez MFA (INFO)
+        auditLogger.info("AUDIT_EVENT: Uspjesna prijava (nizak rizik) за корисника: {}", user.getUsername());
 
         // Rizik je mali, vraćamo glavni JWT token
         final UserDetails userDetails = userDetailsService.loadUserByUsername(user.getUsername());
@@ -170,15 +177,15 @@ public class AuthController {
             String userAgent = contextExtractionService.extractUserAgent(httpRequest);
 
             if (!isCodeValid) {
-                // ELK LOG: Pogrešan MFA kod
-                auditLogger.warn("AUDIT_ALERT: Neuspjesna MFA verifikacija (pogresan kod) za korisnika: {} sa IP: {}", user.getUsername(), ipAddress);
+                // ELK LOG: Pogrešan MFA kod (WARN)
+                auditLogger.warn("AUDIT_ALERT: Neuspjesna MFA verifikacija (pogresan kod) za korisnika: {} са IP: {}", user.getUsername(), ipAddress);
 
                 loginHistoryRepository.save(new LoginHistory(user.getUsername(), ipAddress, userAgent, "FAILED_MFA"));
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Neispravan MFA kod!");
             }
 
-            // ELK LOG: Uspješna MFA verifikacija
-            auditLogger.info("AUDIT_EVENT: Uspjesna MFA verifikacija i prijava za korisnika: {}", user.getUsername());
+            // ELK LOG: Uspješna MFA verifikacija (INFO)
+            auditLogger.info("AUDIT_EVENT: Uspjesna MFA verifikacija i prijava za korisника: {}", user.getUsername());
 
             final UserDetails userDetails = userDetailsService.loadUserByUsername(user.getUsername());
             final String finalJwt = jwtUtil.generateToken(userDetails);
@@ -188,7 +195,9 @@ public class AuthController {
             return ResponseEntity.ok(new AuthResponse(finalJwt));
 
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Nevalidna token struktura!");
+            // ELK LOG: Neočekivana sistemska грешка при верификацији (ERROR)
+            auditLogger.error("AUDIT_ERROR: Neočekivana sistemska грешка током MFA верификације: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Дошло је до грешке на серверу.");
         }
     }
 }
