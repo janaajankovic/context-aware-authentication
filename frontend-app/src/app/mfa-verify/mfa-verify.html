@@ -1,31 +1,77 @@
-<div class="container mt-5">
-  <div class="row justify-content-center">
-    <div class="col-md-5">
-      <div class="card shadow border-danger">
-        <div class="card-header bg-danger text-white text-center">
-          <h4>Dodatna bezbednosna provera</h4>
-        </div>
-        <div class="card-body text-center">
-          <p>Uočen je sumnjiv pokušaj prijave. Unesi kod iz Authenticator aplikacije.</p>
-          <form (ngSubmit)="onVerify()">
-            <div class="mb-3 text-start">
-              <input type="text" 
-            class="form-control text-center fs-4" 
-            name="mfaCode" 
-            [(ngModel)]="mfaCode" 
-            placeholder="123456" 
-            maxlength="6" 
-            inputmode="numeric" 
-            pattern="[0-9]*" 
-            autocomplete="one-time-code"
-            style="letter-spacing: 0.5rem;"
-            required>
-            </div>
-            <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
-            <button type="submit" class="btn btn-danger w-100">Potvrdi identitet</button>
-          </form>
-        </div>
+<!-- ENTERPRISE MFA STYLES -->
+<style>
+  body { background-color: #0b1120; }
+  .mfa-wrapper { min-height: 85vh; display: flex; align-items: center; justify-content: center; }
+  .mfa-card { background-color: #1e293b; border: 1px solid #334155; border-radius: 16px; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5); position: relative; overflow: hidden; }
+  
+  .mfa-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #38bdf8, #818cf8); }
+
+  .mfa-icon-wrapper { width: 72px; height: 72px; background: rgba(245, 158, 11, 0.1); color: #fbbf24; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto; border: 1px solid rgba(251, 191, 36, 0.2); box-shadow: 0 0 20px rgba(245, 158, 11, 0.15); }
+  
+  .mfa-input { background-color: #0f172a !important; border: 1px solid #475569 !important; color: #f8fafc !important; font-family: 'Courier New', Courier, monospace; font-size: 2.2rem !important; text-align: center; letter-spacing: 1.2rem; padding: 15px !important; border-radius: 12px !important; transition: all 0.3s ease; font-weight: 700; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); }
+  .mfa-input:focus { border-color: #38bdf8 !important; box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.15), inset 0 2px 4px rgba(0,0,0,0.2) !important; outline: none; }
+  .mfa-input::placeholder { color: #475569; letter-spacing: 1.2rem; font-weight: 400; }
+  
+  .btn-verify { background: linear-gradient(90deg, #0ea5e9, #38bdf8); border: none; color: white; font-weight: 700; padding: 14px; border-radius: 10px; transition: all 0.3s ease; font-size: 0.9rem; letter-spacing: 1px; }
+  .btn-verify:hover { box-shadow: 0 4px 15px rgba(56, 189, 248, 0.4); transform: translateY(-1px); color: white; }
+  
+  .text-muted-custom { color: #94a3b8; font-size: 0.9rem; }
+  .alert-custom { background-color: rgba(239, 68, 68, 0.15); border: 1px solid rgba(248, 113, 113, 0.3); color: #fca5a5; border-radius: 10px; font-size: 0.85rem; }
+</style>
+
+<div class="container mfa-wrapper">
+  <div class="col-12 col-md-7 col-lg-5">
+    <div class="mfa-card p-4 p-sm-5 text-center">
+      
+      <div class="mfa-icon-wrapper mb-4">
+        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M5.338 1.59a61.44 61.44 0 0 0-2.837.856.481.481 0 0 0-.328.39c-.554 4.157.726 7.19 2.253 9.188a10.725 10.725 0 0 0 2.287 2.233c.346.244.652.42.893.533.12.057.218.095.293.118a.55.55 0 0 0 .101.025.615.615 0 0 0 .1-.025c.076-.023.174-.061.294-.118.24-.113.547-.29.893-.533a10.726 10.726 0 0 0 2.287-2.233c1.527-1.997 2.807-5.031 2.253-9.188a.48.48 0 0 0-.328-.39c-.651-.213-1.75-.56-2.837-.855C9.552 1.29 8.531 1.067 8 1.067c-.53 0-1.552.223-2.662.524zM5.072.56C6.157.265 7.31 0 8 0s1.843.265 2.928.56c1.11.3 2.229.655 2.887.87a1.54 1.54 0 0 1 1.044 1.262c.596 4.477-.787 7.795-2.465 9.99a11.775 11.775 0 0 1-2.517 2.453 7.159 7.159 0 0 1-1.048.625c-.28.132-.581.24-.829.24s-.548-.108-.829-.24a7.158 7.158 0 0 1-1.048-.625 11.777 11.777 0 0 1-2.517-2.453C1.928 10.487.545 7.169 1.141 2.692A1.54 1.54 0 0 1 2.185 1.43 62.456 62.456 0 0 1 5.072.56z"/>
+          <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995z"/>
+        </svg>
       </div>
+
+      <h4 class="text-white fw-bold mb-3">Security Challenge</h4>
+      <p class="text-muted-custom mb-4">
+       Molimo potvrdite vaš identitet unosom 6-cifrenog koda iz Authenticator aplikacije.
+      </p>
+
+      <form (ngSubmit)="onVerify()">
+        <div class="mb-4">
+          <input type="text" 
+                 class="form-control mfa-input" 
+                 name="mfaCode" 
+                 [(ngModel)]="mfaCode" 
+                 placeholder="••••••" 
+                 maxlength="6" 
+                 inputmode="numeric" 
+                 pattern="[0-9]*" 
+                 autocomplete="one-time-code"
+                 required
+                 autofocus>
+        </div>
+
+        <div *ngIf="errorMessage" class="alert alert-custom mb-4 d-flex align-items-center justify-content-center">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-2" viewBox="0 0 16 16">
+            <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+          </svg>
+          {{ errorMessage }}
+        </div>
+
+        <button type="submit" class="btn btn-verify w-100 text-uppercase">
+          Verify Identity
+        </button>
+      </form>
+
+      <div class="mt-4 pt-4" style="border-top: 1px solid #334155;">
+        <p class="mb-0 text-muted-custom" style="font-size: 0.75rem;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="me-1 mb-1" viewBox="0 0 16 16">
+            <path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0zm0 14A6 6 0 1 1 8 2a6 6 0 0 1 0 12z"/>
+            <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3.5a.5.5 0 0 1-.5-.5v-3.5A.5.5 0 0 1 8 4z"/>
+          </svg>
+          Protected by RiskAuth Context-Aware System
+        </p>
+      </div>
+      
     </div>
   </div>
 </div>

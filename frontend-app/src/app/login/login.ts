@@ -20,13 +20,18 @@ export class Login {
   onLogin() {
     this.authService.login(this.username, this.password).subscribe({
       next: (response) => {
-        // Ako je rizik mali, sistem odmah vraća token
+        // 1. Сценарио: НИЗАК РИЗИК (враћа се главни jwt)
         if (response.jwt) {
           this.authService.saveToken(response.jwt);
           this.router.navigate(['/dashboard']);
+        } 
+        else if (response.status === 'MFA_REQUIRED') {
+          localStorage.setItem('preAuthToken', response.preAuthToken);
+          
+          this.router.navigate(['/verify-mfa']); 
         }
       },
-        error: (err) => {
+      error: (err) => {
         if (err.status === 429) {
           this.errorMessage = 'Previše neuspješnih pokušaja. Pokušajte ponovo za 15 minuta.';
         } else if (err.status === 401) {
