@@ -6,6 +6,7 @@ import java.util.List;
 
 @Data
 public class RiskAnalysisResponse {
+
     @JsonProperty("risk_score")
     private double riskScore;
 
@@ -13,4 +14,12 @@ public class RiskAnalysisResponse {
 
     @JsonProperty("requires_mfa")
     private boolean requiresMfa;
+
+    private String country;
+
+    private String city;
+
+    private Double latitude;
+
+    private Double longitude;
 }

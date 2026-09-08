@@ -27,8 +27,8 @@ public class DeviceContext {
     @Column(name = "user_agent", nullable = false, length = 512)
     private String userAgent;
 
-    // Grad/Država koju ćemo dobijati mapiranjem IP adrese
-    private String location;
+    @Embedded
+    private GeoLocation location;
 
     // Vreme pokušaja prijave
     @Column(name = "login_timestamp", nullable = false)

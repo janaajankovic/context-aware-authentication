@@ -15,19 +15,30 @@ public class LoginHistory {
     private String ipAddress;
     private String userAgent;
 
-    // Status prijave (npr. SUCCESS, MFA_REQUIRED, FAILED)
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private LoginStatus status;
 
     private LocalDateTime timestamp;
 
+    @Column(name = "risk_score")
+    private Double riskScore;
+
+    public Double getRiskScore() {
+        return riskScore;
+    }
+
+    public void setRiskScore(Double riskScore) {
+        this.riskScore = riskScore;
+    }
+
     public LoginHistory() {}
 
-    public LoginHistory(String username, String ipAddress, String userAgent, String status) {
+    public LoginHistory(String username, String ipAddress, String userAgent, LoginStatus status) {
         this.username = username;
         this.ipAddress = ipAddress;
         this.userAgent = userAgent;
         this.status = status;
-        this.timestamp = LocalDateTime.now(); // Automatski beleži trenutno vreme
+        this.timestamp = LocalDateTime.now();
     }
 
     public Long getId() { return id; }
@@ -42,8 +53,8 @@ public class LoginHistory {
     public String getUserAgent() { return userAgent; }
     public void setUserAgent(String userAgent) { this.userAgent = userAgent; }
 
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public LoginStatus getStatus() { return status; }
+    public void setStatus(LoginStatus status) { this.status = status; }
 
     public LocalDateTime getTimestamp() { return timestamp; }
     public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }

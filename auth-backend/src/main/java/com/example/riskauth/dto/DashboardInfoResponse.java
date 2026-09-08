@@ -1,6 +1,7 @@
 package com.example.riskauth.dto;
 
 import com.example.riskauth.model.LoginHistory;
+import com.example.riskauth.model.LoginStatus;
 import lombok.Builder;
 import lombok.Data;
 import java.util.List;
@@ -12,6 +13,8 @@ public class DashboardInfoResponse {
     private String currentUserAgent;
     private String location;
     private double riskScore;
-    private String currentStatus;
+    private LoginStatus currentStatus;
+    private String mfaQrCode;
     private List<LoginHistory> auditTrail;
+
 }

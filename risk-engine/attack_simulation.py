@@ -60,9 +60,9 @@ def send_request(req_id, is_legit=False):
         
         # Interpretacija odgovora prema novoj Spring Boot arhitekturi
         if status == 200:
-            outcome = "USPEH (Ulogovan - Nizak rizik)" if is_legit else "KRITIČNO (Sistem probijen!)"
+            outcome = "USPJEH (Ulogovan - Nizak rizik)" if is_legit else "KRITIČNO (Sistem probijen!)"
         elif status == 202:
-            outcome = "MFA ZAHTEVAN (Visok rizik)"
+            outcome = "ZAHTIJEVA MFA (Visok rizik)"
         elif status == 401:
             outcome = "ODBIJENO (Pogrešna lozinka)"
         elif status == 429:
@@ -89,7 +89,7 @@ def run_simulation():
     with open(CSV_FILENAME, mode="w", newline="", encoding="utf-8") as file:
         writer = csv.writer(file)
         # Zaglavlje tabele
-        writer.writerow(["ID_Zahteva", "Vreme", "Tip_Saobracaja", "Simulirana_IP", "Pokusana_Lozinka", "HTTP_Status", "Rezultat", "Latencija_ms"])
+        writer.writerow(["ID_Zahtjeva", "Vrijeme", "Tip_Saobracaja", "Simulirana_IP", "Pokusana_Lozinka", "HTTP_Status", "Rezultat", "Latencija_ms"])
 
         # 1. Faza: Legitimni korisnici (Uspostavljanje normalnog stanja)
         print("--- [FAZA 1: Generisanje legitimnog saobraćaja] ---")
