@@ -80,7 +80,7 @@ Users can configure their MFA device securely using dynamically generated QR cod
 
 3. User Dashboard & Context Visibility
 Users have full transparency over their active session context and a complete history of their login attempts.
-<img width="1883" height="867" alt="Screenshot 2026-09-07 160641" src="https://github.com/user-attachments/assets/99018774-8f2c-4369-9a6a-18359e2f3861" />
+<img width="1819" height="869" alt="Screenshot 2026-09-07 171735" src="https://github.com/user-attachments/assets/ac1579ef-6cd1-408c-b56f-64b3cf8eceeb" />
 
 4. Security Monitoring & Analytics (ELK Stack)
 All authentication events are streamed to Kibana for real-time administrative oversight, allowing for immediate threat detection.
