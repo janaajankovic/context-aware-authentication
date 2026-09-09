@@ -48,7 +48,7 @@ public class MfaSecretEncryptor implements AttributeConverter<String, String> {
             byte[] decryptedBytes = cipher.doFinal(Base64.getDecoder().decode(dbData));
             return new String(decryptedBytes);
         } catch (Exception e) {
-            throw new RuntimeException("Greška pri dešifrovanju MFA tajne. Moguće da je u bazi ostao nekriptovan podatak.", e);
+            throw new RuntimeException("Greška pri dešifrovanju MFA ključa.", e);
         }
     }
 }

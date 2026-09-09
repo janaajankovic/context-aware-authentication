@@ -48,12 +48,8 @@ public class DashboardController {
             LoginHistory latest = recentHistory.get(0);
             currentIp = latest.getIpAddress();
             userAgent = latest.getUserAgent();
-
-            // Rešen problem sa statusom: sada se direktno prosleđuje Enum,
-            // a frontend će ga ispravno prikazati bez potrebe za .contains() proverama.
             status = latest.getStatus();
 
-            // Prava vrednost iz baze podataka koju je izračunao Python Risk Engine
             if (latest.getRiskScore() != null) {
                 riskScore = latest.getRiskScore();
             }

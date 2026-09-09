@@ -20,7 +20,6 @@ export class Login {
   onLogin() {
     this.authService.login(this.username, this.password).subscribe({
       next: (response) => {
-        // 1. Сценарио: НИЗАК РИЗИК (враћа се главни jwt)
         if (response.jwt) {
           this.authService.saveToken(response.jwt);
           this.router.navigate(['/dashboard']);

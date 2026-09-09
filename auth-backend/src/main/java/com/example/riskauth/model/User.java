@@ -33,7 +33,6 @@ public class User {
     @Column(name = "mfa_secret")
     private String mfaSecret;
 
-    // Veza 1:N - Jedan korisnik može imati više zabeleženih uređaja/konteksta
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<DeviceContext> deviceContexts = new ArrayList<>();
 }

@@ -145,7 +145,7 @@ def analyze_risk(context: LoginContext):
     else:
         print("[-] [Pravilo 1 - User-Agent]: NEAKTIVIRANO -> Klijent je standardni web pretraživač.")
 
-    # --- PRAVILO 2: Sumnjivo vreme prijave ---
+    # --- PRAVILO 2: Sumnjivo vrijeme prijave ---
     try:
         hour = int(context.login_time.split(":")[0])
         if 2 <= hour <= 5:

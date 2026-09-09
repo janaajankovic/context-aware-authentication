@@ -34,7 +34,6 @@ public class DataSeeder {
                 }
             }
 
-            // Ako korisnik NEMA MFA ključ, generišemo ga
             if (user.getMfaSecret() == null || user.getMfaSecret().isEmpty()) {
                 String secret = mfaService.generateSecretKey();
                 user.setMfaSecret(secret);
@@ -44,7 +43,6 @@ public class DataSeeder {
                 System.out.println("Skeniraj ovaj link u pregledaču da dobiješ QR kod:");
                 System.out.println(qrCodeUrl);
             } else {
-                // Ako korisnik VEĆ IMA ključ, samo ispisujemo ažurirani QR link
                 String qrCodeUrl = mfaService.getQrCodeImageBase64(user.getUsername(), user.getMfaSecret());
                 System.out.println("Novi (ispravljeni) QR kod link:");
                 System.out.println(qrCodeUrl);

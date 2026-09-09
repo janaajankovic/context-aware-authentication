@@ -4,16 +4,13 @@ import csv
 import random
 from datetime import datetime
 
-# --- KONFIGURACIJA METE ---
 URL = "http://localhost:8080/api/auth/login"
 USERNAME = "testuser"
 CORRECT_PASSWORD = "master2026"
 CSV_FILENAME = "rezultati_simulacije_master.csv"
 
-# --- PODACI ZA SIMULACIJU ---
 stolen_passwords = ["123456", "password", "admin", "test", "qwerty", CORRECT_PASSWORD]
 
-# Lažne IP adrese koje asociraju na pretnje (poklapaju se sa našom crnom listom)
 malicious_ips = ["104.21.34.4", "198.51.100.14", "8.8.8.8", "203.0.113.50"]
 legit_ips = ["127.0.0.1", "localhost"]
 
@@ -32,7 +29,6 @@ def print_banner():
 def send_request(req_id, is_legit=False):
     """Šalje jedan HTTP zahtev i vraća podatke za CSV."""
     
-    # Priprema podataka zavisno od toga da li je zahtev legitiman ili napad
     if is_legit:
         ip = random.choice(legit_ips)
         pwd = CORRECT_PASSWORD
@@ -47,18 +43,16 @@ def send_request(req_id, is_legit=False):
     headers = {
         "User-Agent": ua,
         "Content-Type": "application/json",
-        "X-Forwarded-For": ip  # Simuliramo IP adresu iz koje zahtev dolazi
+        "X-Forwarded-For": ip  
     }
     payload = {"username": USERNAME, "password": pwd}
 
-    # Merenje latencije i slanje zahteva
     start_time = time.time()
     try:
         response = requests.post(URL, json=payload, headers=headers, timeout=5)
         latency = round((time.time() - start_time) * 1000)
         status = response.status_code
         
-        # Interpretacija odgovora prema novoj Spring Boot arhitekturi
         if status == 200:
             outcome = "USPJEH (Ulogovan - Nizak rizik)" if is_legit else "KRITIČNO (Sistem probijen!)"
         elif status == 202:
@@ -88,24 +82,20 @@ def run_simulation():
     
     with open(CSV_FILENAME, mode="w", newline="", encoding="utf-8") as file:
         writer = csv.writer(file)
-        # Zaglavlje tabele
         writer.writerow(["ID_Zahtjeva", "Vrijeme", "Tip_Saobracaja", "Simulirana_IP", "Pokusana_Lozinka", "HTTP_Status", "Rezultat", "Latencija_ms"])
 
-        # 1. Faza: Legitimni korisnici (Uspostavljanje normalnog stanja)
         print("--- [FAZA 1: Generisanje legitimnog saobraćaja] ---")
         for i in range(1, 6):
             csv_row = send_request(i, is_legit=True)
             writer.writerow(csv_row)
             time.sleep(0.5)
 
-        # 2. Faza: Credential Stuffing (Hakerski napad)
         print("\n--- [FAZA 2: Distribuirani Credential Stuffing Napad] ---")
         for i in range(6, 106): # 100 hakerskih pokušaja
             csv_row = send_request(i, is_legit=False)
             writer.writerow(csv_row)
-            time.sleep(0.1) # Brz rafalni napad
+            time.sleep(0.1)
 
-        # 3. Faza: Provera dostupnosti (Da li sistem i dalje radi za prave ljude)
         print("\n--- [FAZA 3: Post-napad legitimna provera] ---")
         for i in range(106, 111):
             csv_row = send_request(i, is_legit=True)

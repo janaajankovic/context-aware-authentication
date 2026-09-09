@@ -30,7 +30,7 @@ public class DeviceContext {
     @Embedded
     private GeoLocation location;
 
-    // Vreme pokušaja prijave
+    // Vrijeme pokušaja prijave
     @Column(name = "login_timestamp", nullable = false)
     private LocalDateTime loginTimestamp;
 

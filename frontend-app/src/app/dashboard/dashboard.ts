@@ -32,7 +32,7 @@ export class Dashboard implements OnInit {
         this.dashboardData = data;
       },
       error: (err) => {
-        console.error('Грешка приликом добављања података за дашборд:', err);
+        console.error('Greska prilikom dobavljanja podataka za dashboard:', err);
       }
     });
   }

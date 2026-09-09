@@ -32,7 +32,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         String username = null;
         String jwt = null;
 
-        // 1. Proveravamo da li postoji Authorization zaglavlje sa Bearer tokenom
+        // 1. Provjeravamo da li postoji Authorization zaglavlje sa Bearer tokenom
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             jwt = authorizationHeader.substring(7);
             try {
