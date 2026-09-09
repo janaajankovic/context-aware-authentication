@@ -68,12 +68,9 @@ public class AuthController {
         } catch (Exception e) {
             // REDIS: Bilježimo neuspješan pokušaj
             loginAttemptService.loginFailed(ipAddress);
-
             // ELK LOG: Pogrešna lozinka (WARN)
             auditLogger.warn("AUDIT_ALERT: Neuspjesna prijava (pogresna lozinka) za korisnika: {} sa IP: {}", authRequest.getUsername(), ipAddress);
-
             loginHistoryRepository.save(new LoginHistory(authRequest.getUsername(), ipAddress, userAgent, LoginStatus.FAILED_BAD_PASSWORD));
-
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Neispravan username ili lozinka");
         }
 
