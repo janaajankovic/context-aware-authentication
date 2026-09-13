@@ -23,7 +23,7 @@ A distributed microservice system for dynamic user authentication based on conte
 | **PostgreSQL** | `5432` | - | Relational database storing users, encrypted MFA secrets, and login history. |
 | **Redis** | `6379` | - | In-memory cache for Rate Limiting and fast session tracking. |
 | **Elasticsearch** | `9200` | - | Search and analytics engine for storing security logs. |
-| **Logstash** | `5044` | Elasticsearch | Data processing pipeline ingesting audit logs from the Auth Service. |
+| **Logstash** | `50000` | Elasticsearch | Data processing pipeline ingesting audit logs from the Auth Service. |
 | **Kibana** | `5601` | Elasticsearch | Dashboard for real-time visualization of security events and anomalies. |
 
 ---
