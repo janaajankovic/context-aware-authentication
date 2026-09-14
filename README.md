@@ -19,7 +19,7 @@ A distributed microservice system for dynamic user authentication based on conte
 | :--- | :--- | :--- | :--- |
 | **RiskAuth UI** | `4200` | Node.js | Angular client application (User Interface). |
 | **Auth Service** | `8080` | PostgreSQL, Redis | Spring Boot backend handling core authentication, JWT issuance, and MFA. |
-| **Risk Engine** | `8000` | - | Python FastAPI service for policy evaluation, scoring, and anomaly detection. |
+| **Risk Engine** | `8001` | - | Python FastAPI service for policy evaluation, scoring, and anomaly detection. |
 | **PostgreSQL** | `5432` | - | Relational database storing users, encrypted MFA secrets, and login history. |
 | **Redis** | `6379` | - | In-memory cache for Rate Limiting and fast session tracking. |
 | **Elasticsearch** | `9200` | - | Search and analytics engine for storing security logs. |
@@ -49,7 +49,7 @@ Navigate to the risk-engine directory, install requirements, and run the FastAPI
 ```Bash
 cd risk-engine
 pip install -r requirements.txt
-uvicorn main:app --host 0.0.0.0 --port 8000
+uvicorn main:app --host 0.0.0.0 --port 8001
 3. Start the Auth Service (Java)
 Navigate to the auth-service directory and run the Spring Boot application:
 ```
